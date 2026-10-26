@@ -27,3 +27,6 @@ Thumbs.db
 .env.local
 
 # uv
+.cloud-bootstrap/
+reports/
+cloud/probe-result.json

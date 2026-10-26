@@ -1,0 +1,17 @@
+{
+  "name": "codex-bilibili-reader",
+  "status": "prepared-locally-not-created-in-codex-cloud",
+  "runtime": "Python 3.12 recommended; minimum 3.10",
+  "install_command": "bash cloud/setup.sh",
+  "probe_command": ".venv/bin/python cloud/probe.py",
+  "network": {
+    "enabled": true,
+    "preset": "Package managers",
+    "additional_hosts": ["api.bilibili.com", "www.bilibili.com", "passport.bilibili.com", "api.bilibili.tv", "i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com", "aisubtitle.hdslb.com"]
+  },
+  "network_note": "Initial host list only. Record exact denied hosts and add only those needed; subtitles and media can use other CDN hosts.",
+  "secrets": "None configured. Do not paste Bilibili cookies into chat or Git.",
+  "privacy": "Only me",
+  "gpu": false,
+  "schedule": "None created"
+}
