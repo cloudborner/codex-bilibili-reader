@@ -13,7 +13,7 @@ import re
 from typing import Any
 
 import aiohttp
-from bilibili_api import comment, dynamic, favorite_list, homepage, hot, rank, search, user, video
+from bilibili_api import comment, dynamic, favorite_list, get_selected_client, homepage, hot, rank, request_settings, search, user, video
 from bilibili_api.exceptions import (
     ApiException,
     CredentialNoBiliJctException,
@@ -83,6 +83,16 @@ def _map_api_error(action: str, exc: Exception) -> BiliError:
 async def _call_api(action: str, awaitable):
     """Run an awaitable and normalize API/network/auth errors."""
     try:
+        # In the locked SDK, aiohttp receives proxy="" by default. That
+        # suppresses HTTPS_PROXY even with trust_env=True. None restores
+        # aiohttp's normal environment and NO_PROXY handling. Preserve an
+        # explicit proxy or an explicit decision not to trust the environment.
+        if (
+            get_selected_client()[0] == "aiohttp"
+            and request_settings.get_trust_env()
+            and request_settings.get_proxy() == ""
+        ):
+            request_settings.set("proxy", None)
         return await awaitable
     except Exception as exc:
         raise _map_api_error(action, exc) from exc
@@ -194,7 +204,7 @@ async def get_video_subtitle(
     # Download subtitle JSON
     try:
         timeout = aiohttp.ClientTimeout(total=10)
-        async with aiohttp.ClientSession(timeout=timeout) as session:
+        async with aiohttp.ClientSession(timeout=timeout, trust_env=True) as session:
             async with session.get(subtitle_url) as resp:
                 resp.raise_for_status()
                 subtitle_data = await resp.json(content_type=None)
@@ -374,7 +384,7 @@ async def _get_video_comments_direct(
         headers["Cookie"] = "; ".join(cookies)
 
     timeout = aiohttp.ClientTimeout(total=30)
-    async with aiohttp.ClientSession(timeout=timeout) as session:
+    async with aiohttp.ClientSession(timeout=timeout, trust_env=True) as session:
         async with session.get(api_url, params=params, headers=headers) as resp:
             resp.raise_for_status()
             payload = await resp.json()
@@ -668,7 +678,7 @@ async def download_audio(audio_url: str, output_path: str) -> int:
 
     for attempt in range(max_retries):
         try:
-            async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with aiohttp.ClientSession(timeout=timeout, trust_env=True) as session:
                 async with session.get(audio_url, headers=_DOWNLOAD_HEADERS) as resp:
                     if resp.status == 200:
                         os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
